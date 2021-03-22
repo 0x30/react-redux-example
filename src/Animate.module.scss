@@ -1,5 +1,25 @@
 .back-view {
-  color: red;
+  background-color: red;
   height: 100px;
   width: 100px;
+
+  transition: 1s ease-in-out;
+
+  &:hover {
+    background-color: green;
+    // border-radius: 50px;
+
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes test {
+  0% {
+    font-size: 12px;
+    transform: rotate(45deg);
+  }
+
+  100% {
+    font-size: 18px;
+  }
 }

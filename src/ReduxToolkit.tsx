@@ -1,35 +1,59 @@
-import { createSlice, createStore } from "@reduxjs/toolkit";
+import { createSlice, createStore, PayloadAction } from "@reduxjs/toolkit";
 import { connect, ConnectedProps, Provider } from "react-redux";
+
+interface State {
+  value: number;
+  hitokotos: string[];
+}
+
+const getInitState = (): State => {
+  const { value, hitokotos } = JSON.parse(
+    window.localStorage.getItem("CountSlice") ?? "{}"
+  );
+  return {
+    value: value ?? 0,
+    hitokotos: hitokotos ?? [],
+  };
+};
 
 const CountSlice = createSlice({
   name: "CountSlice",
-  initialState: {
-    value: Number.parseInt(localStorage.getItem("count") || "0"),
-  },
+  initialState: getInitState(),
   reducers: {
     increase: (state) => {
       state.value++;
-      localStorage.setItem("count", `${state.value}`);
     },
     decrement: (state) => {
       state.value--;
-      localStorage.setItem("count", `${state.value}`);
+    },
+    addHitokoto: (state, action: PayloadAction<string>) => {
+      state.hitokotos.push(action.payload);
     },
   },
-  extraReducers: {},
 });
 
 const store = createStore(CountSlice.reducer);
+
+store.subscribe(() => {
+  window.localStorage.setItem("CountSlice", JSON.stringify(store.getState()));
+});
+
 type StoreState = ReturnType<typeof store.getState>;
 
 const connector = connect(
   (state: StoreState) => {
-    return { count: state.value };
+    return { ...state };
   },
   (dispatch) => {
     return {
       increase: () => dispatch(CountSlice.actions.increase()),
       decrement: () => dispatch(CountSlice.actions.decrement()),
+      addHitokoto: async () => {
+        const { hitokoto } = await fetch(
+          "https://v1.hitokoto.cn/"
+        ).then((res) => res.json());
+        dispatch(CountSlice.actions.addHitokoto(hitokoto));
+      },
     };
   }
 );
@@ -38,15 +62,23 @@ type PropsFromCountSlice = ConnectedProps<typeof connector>;
 
 const App = ({
   name,
-  count,
+  value,
+  hitokotos,
+  addHitokoto,
   increase,
   decrement,
 }: PropsFromCountSlice & { name: string }) => {
   return (
     <div>
-      {count}
+      {value}
       <button onClick={increase}>{name} +1</button>
       <button onClick={decrement}>{name} -1</button>
+      <button onClick={addHitokoto}>获取内容</button>
+      <ul>
+        {hitokotos.map((hitokoto, idx) => (
+          <ol key={idx}>${hitokoto}</ol>
+        ))}
+      </ul>
     </div>
   );
 };
